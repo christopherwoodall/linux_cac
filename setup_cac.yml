@@ -1,0 +1,164 @@
+#!/usr/bin/env -S ansible-playbook -K
+---
+
+- name: Install Linux CAC Modules
+  hosts:        localhost
+  become:       false
+  connection:   local
+  gather_facts: true
+
+  vars:
+    user_home: "{{ lookup('env','HOME') }}"
+    pki_dir:   "{{ user_home }}/.pki"
+    cert_dir:  "{{ pki_dir }}/certs"
+    nssdb_dir: "{{ pki_dir }}/nssdb"
+    password:  "password"
+    cac_module: "/usr/lib/pkcs11/libcoolkeypk11.so"
+    pki_download_url: "https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/certificates_pkcs7_DoD.zip"
+    #pki_download_url: "https://crl.chamb.disa.mil/"
+    #pki_download_url: "https://militarycac.com/maccerts/AllCerts.zip"
+
+  tasks:
+    - name: Install CAC Modules
+      when: ansible_os_family == 'Debian'
+      block:
+        - name: Install OS Packages
+          become: true
+          apt:
+            pkg:
+              - coolkey
+              - libpcsclite1
+              - libnss3-tools
+              - pcscd
+              - pcsc-tools
+              - opensc
+            state: present
+            update_cache: true
+
+
+        - name: Clean up after install
+          become: true
+          apt:
+            autoclean: yes
+            autoremove: yes
+
+
+        - name: Enable the PKCS#11 service
+          become: true
+          systemd:
+            name: pcscd
+            state:   started
+            enabled: true
+
+
+        - name: Gather package facts
+          package_facts:
+            manager: "auto"
+
+
+        # - name: Create /usr/lib64 directory
+        #   become: true
+        #   file:
+        #     path: "/usr/lib64"
+        #     state: directory
+        #     mode: 0755
+
+
+        - name: Create PKI directories
+          file:
+            path: "{{ item }}"
+            state: directory
+            mode: 0755
+          with_items:
+            - "{{ pki_dir }}"
+            - "{{ cert_dir }}"
+            - "{{ nssdb_dir }}"
+
+
+        - name: Unarchive a file that needs to be downloaded (added in 2.0)
+          unarchive:
+            src: "{{ pki_download_url }}"
+            dest: "{{ cert_dir }}/"
+            remote_src: yes
+            extra_opts:
+              - '-j'
+
+
+        - name: Check if NSS DB exists
+          stat:
+            path: "{{ nssdb_dir }}/cert9.db"
+          register: cert9
+
+
+        - name: Create file for temporary import/export password
+          copy:
+            dest: "{{ pki_dir }}/password.txt"
+            content: "{{ password }}"
+
+
+        - name: Initialize the NSS database
+          shell: |
+            certutil -f {{ pki_dir }}/password.txt -d sql:{{ nssdb_dir }} -N
+          when: cert9.stat.exists == False
+
+
+        # - name: List PKCS#11 Modules
+        #   shell:
+        #     modutil -dbdir sql:{{ nssdb_dir }} -list
+        #   register: module_list
+
+
+        - name: Get list of certs
+          shell: |
+            ls -1 {{ cert_dir }} | grep .p7b
+            ls -1 {{ cert_dir }} | grep .pem
+          register: cert_list
+
+
+        # TODO: check `nssdb/pkcs11.txt` for the module name
+        - name: Add the CAC Module
+          become: true
+          shell: |
+            modutil -dbdir sql:{{ nssdb_dir }} -add "CAC Module" -libfile {{ cac_module }} -force
+          failed_when: false
+          when: "'google-chrome-stable' in ansible_facts.packages"
+
+
+          # TODO: https://gist.github.com/drduker/6f6d464731202c503c374859663b4b2e
+        - name: Import the certificates (Chrome)
+          shell: |
+            cd {{ cert_dir }}
+            certutil \
+              -f {{ pki_dir }}/password.txt \
+              -d sql:{{ nssdb_dir }} \
+              -A \
+              -n "{{ item }}" \
+              -t "C,," \
+              -i "{{ cert_dir }}/{{ item }}"
+          with_items: "{{ cert_list.stdout_lines }}"
+          failed_when: false
+          when: "'google-chrome-stable' in ansible_facts.packages"
+
+
+        - name: Get default Firefox firefox_profile
+          shell: |
+            ls -1 {{ user_home }}/.mozilla/firefox | grep default-release
+          register: firefox_profile
+          when: "'firefox' in ansible_facts.packages"
+
+
+        # - name: Import the certificates (Firefox)
+        #   shell: |
+        #     cd {{ cert_dir }}
+        #     certutil \
+        #       -f {{ pki_dir }}/password.txt \
+        #       -d sql:{{ user_home }}/.mozilla/firefox/{{ firefox_profile.stdout }}/cert9.db \
+        #       -A \
+        #       -n "{{ item }}" \
+        #       -t "C,," \
+        #       -i "{{ cert_dir }}/{{ item }}"
+        #   with_items: "{{ cert_list.stdout_lines }}"
+        #   when: "'firefox' in ansible_facts.packages"
+
+
+...
