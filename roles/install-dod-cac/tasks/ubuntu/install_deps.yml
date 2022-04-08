@@ -1,0 +1,25 @@
+---
+
+- name: Install OS Packages
+  become: true
+  apt:
+    pkg:
+      - ca-certificates
+      - coolkey
+      - libpcsclite1
+      - libnss3-tools
+      - pcscd
+      - pcsc-tools
+      - opensc
+    state: present
+    update_cache: true
+
+
+- name: Clean up after install
+  become: true
+  apt:
+    autoclean: yes
+    autoremove: yes
+
+
+...

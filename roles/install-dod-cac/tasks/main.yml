@@ -1,0 +1,79 @@
+#!/usr/bin/env -S ansible localhost -K -m include_role -a name=install_cac
+---
+
+#########################################
+## Install and Configure CAC Modules
+#########################################
+## NOTES
+# DTS (Java/IcedTea)
+#   1. edit `$HOME/.DBsign/UWC/DBsign.cfg`
+#   2. <param name="pkcs11_library">/usr/lib64/libcoolkeypk11.so</param>
+#
+# Rkeene CAC Key
+#  - http://cackey.rkeene.org/fossil/wikie?name=Downloads
+#
+# DoD PKI Download URLs
+#  - https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/certificates_pkcs7_DoD.zip
+#  - https://crl.chamb.disa.mil/
+#  - https://militarycac.com/maccerts/AllCerts.zip
+#
+# Other Projects
+#  - https://gist.github.com/jfeilbach/79cefd3be2100d659e244365a127243e
+#
+# Trust Stores
+#  - https://ubuntu.com/server/docs/security-trust-store
+#
+#
+#########################################
+
+- name: Install Dependencies
+  include_tasks: ubuntu/install_deps.yml
+  when: ansible_os_family == 'Debian'
+
+
+- name: Start the PKCS#11 service
+  include_tasks: common/pcsc.yml
+
+
+- name: Setup directories
+  include_tasks: common/setup.yml
+
+
+- name: Download certificates
+  include_tasks: common/download.yml
+
+
+- name: Convert certificates
+  include_tasks: common/convert.yml
+
+
+- name: Install certificates to the system trust store
+  include_tasks: common/install_system.yml
+
+
+- name: Gather Package Facts
+  package_facts:
+    manager: "auto"
+
+
+- name: Setup Chrome
+  include_tasks: install_chrome.yml
+  when: "'google-chrome-stable' in ansible_facts.packages"
+
+
+- name: Setup Firefox
+  include_tasks: install_firefox.yml
+  when: "'firefox' in ansible_facts.packages"
+
+
+- name: Finished
+  shell: |
+      /usr/bin/notify-send \
+      --expire-time=3000 \
+      "Ansible | DoD CAC Module" \
+      "Installation of DoD Certificates and CAC Module has finished"
+  changed_when: false
+  failed_when:  false
+
+
+...

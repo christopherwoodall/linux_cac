@@ -1,0 +1,15 @@
+---
+
+- name: Initialize NSSDB
+  include_tasks: chrome/init_nssdb.yml
+
+
+- name: Install CAC Module
+  include_tasks: chrome/init_cac.yml
+
+
+- name: Install Certificates
+  include_tasks: chrome/install_certificates.yml
+
+
+...

@@ -1,0 +1,19 @@
+---
+
+- name: Install Certificates (Firefox)
+  shell: |
+    cd {{ paths.crt }}
+    CERT_DB=$(find ~/.mozilla/firefox/ -name "cert9.db")
+    CERT_DIR=$(dirname "${CERT_DB}");
+    for cert in *.crt; do
+      certutil \
+        -A \
+        -d sql:${CERT_DIR} \
+        -t CT,C,C \
+        -n "${cert}" \
+        -i "${cert}";
+    done
+  failed_when: false
+
+
+...

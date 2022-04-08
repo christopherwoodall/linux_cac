@@ -1,0 +1,40 @@
+---
+
+# - name: Check if certificates already exists
+#   become: true
+#   stat:
+#     path: "{{ ca[ansible_os_family].path }}/{{ dod.ca_dir }}/{{ dod.ca_pem }}.crt"
+#   register: dod_pem
+
+
+- name: Copy & Install Certificates
+  # when: dod_pem.stat.exists == false
+  become: true
+  block:
+    - name: Create DoD CA directory
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: 0755
+      with_items:
+        - "{{ ca[ansible_os_family].path }}/{{ dod.ca_dir }}"
+
+
+    - name: Copy Certificates
+      copy:
+        src:   "{{ item }}"
+        dest:  "{{ ca[ansible_os_family].path }}/{{ dod.ca_dir }}/"
+        owner: root
+        group: root
+        mode:  0644
+      with_fileglob:
+        - "{{ paths.crt }}/*.crt"
+
+
+    - name: Install Certificates
+      shell: |
+        {{ ca[ ansible_os_family ].bin }} --fresh
+        {{ ca[ ansible_os_family ].bin }}
+
+
+...

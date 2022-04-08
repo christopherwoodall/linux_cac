@@ -1,0 +1,16 @@
+---
+
+- name: Check if NSS DB exists
+  stat:
+    path: "{{ paths.nssdb }}/cert9.db"
+  register: cert9
+
+
+- name: Initialize the NSS database
+  shell: |
+    cd {{ paths.home }}
+    certutil -N -f .pki/password.txt -d sql:.pki/nssdb
+  when: cert9.stat.exists == false
+
+
+...

@@ -1,0 +1,44 @@
+---
+
+user_home: "{{ lookup('env','HOME') }}"
+
+
+dod:
+  pki_url: "https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/certificates_pkcs7_DoD.zip"
+  ca_pem: "DoD_CAs.pem"
+  ca_dir: "dod"
+
+
+paths:
+  home:  "{{ user_home }}"
+  pki:   "{{ user_home }}/.pki"
+  certs: "{{ user_home }}/.pki/certs"
+  crt:   "{{ user_home }}/.pki/certs/crt"
+  dl:    "{{ user_home }}/.pki/certs/dl"
+  nssdb: "{{ user_home }}/.pki/nssdb"
+
+
+pw_file:  "{{ user_home }}/.pki/password.txt"
+password: "password"
+
+
+ca:
+  Debian:
+    bin:  "/usr/sbin/update-ca-certificates"
+    path: "/usr/local/share/ca-certificates"
+  RedHat:
+    bin:  "/bin/update-ca-trust"
+    path: "/etc/pki/ca-trust/source/anchors"
+  OpenSSL:
+    path: "/etc/ssl/certs"
+
+
+modules:
+  cac:
+    lib: "/usr/lib64/libcackey.so"
+    # lib: "/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so"
+    # lib: "/usr/lib/pkcs11/libcoolkeypk11.so"
+
+
+
+...

@@ -1,0 +1,37 @@
+---
+
+- name: Enable the PKCS#11 service
+  become: true
+  systemd:
+    name: pcscd
+    state:   started
+    enabled: true
+
+
+- name: Ensure CAC Reader is plugged in and visible
+  shell: |
+    timeout 3 pcsc_scan -q -n -r
+  register: pcsc_scan
+  failed_when: false
+
+
+- name: Verify PCSC Scan
+  failed_when: ( pcsc_scan.rc not in [ 0, 1 ] )
+  fail:
+    msg: |
+      [!] ERROR - The system was unable to detect your CAC Reader. Please ensure it is plugged in and powered.
+
+
+- name: Ensure we fail
+  when: ( pcsc_scan.rc not in [ 0, 1 ] )
+  block:
+    - meta: end_play
+  #  !!!!!!!!!!!!!!!!!!!!!!  ERROR  !!!!!!!!!!!!!!!!!!!!!!!!!
+  #  !!                                                    !!
+  #  !!  The system was unable to detect your CAC Reader.  !!
+  #  !!  Please ensure it is plugged in and powered.       !!
+  #  !!                                                    !!
+  #  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+...

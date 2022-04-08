@@ -1,0 +1,12 @@
+---
+
+- name: Download and extract DoD Certificates
+  unarchive:
+    src: "{{ dod.pki_url }}"
+    dest: "{{ paths.dl }}/"
+    remote_src: yes
+    extra_opts:
+      - '-j'
+
+
+...

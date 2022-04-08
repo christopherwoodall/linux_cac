@@ -1,0 +1,22 @@
+---
+
+- name: Create PKI directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  with_items:
+    - "{{ paths.pki }}"
+    - "{{ paths.certs }}"
+    - "{{ paths.dl }}"
+    - "{{ paths.crt }}"
+    - "{{ paths.nssdb }}"
+
+
+- name: Create file for temporary import/export password
+  copy:
+    dest: "{{ pw_file }}"
+    content: "{{ password }}"
+
+
+...

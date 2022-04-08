@@ -1,0 +1,10 @@
+---
+
+- name: Update CA Trust
+  listen: update-ca
+  become: true
+  shell: |
+    {{ ca[ ansible_os_family ].bin }}
+
+
+...

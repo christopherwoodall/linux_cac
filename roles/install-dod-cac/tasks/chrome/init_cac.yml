@@ -1,0 +1,33 @@
+---
+
+- name: Check if the CAC Module has already been added
+  shell: |
+    cd {{ paths.home }}
+    cat .pki/nssdb/pkcs11.txt | grep 'CAC Module'
+  register: pkcs11_module
+  failed_when: false
+
+
+- name: Add the CAC Module
+  shell: |
+    cd {{ paths.home }}
+    modutil \
+      -force \
+      -dbdir sql:.pki/nssdb/ \
+      -add "CAC Module" \
+      -libfile {{ modules.cac.lib }}
+  when: ( pkcs11_module.rc == 1 )
+
+
+# - name: List PKCS#11 Modules
+#   shell:
+#     modutil -dbdir sql:{{ nssdb_dir }} -list
+#   register: module_list
+
+
+# - name: Remove the CAC Module
+#   shell: |
+#     modutil -dbdir sql:.pki/nssdb/ -delete "CAC Module"
+#   failed_when: false
+
+...

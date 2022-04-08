@@ -1,0 +1,40 @@
+---
+
+- name: Convert PKCS#7 Root CA Bundle to PEM Certificate
+  shell: |
+    cd {{ paths.dl }}
+    for cert in `ls -1 | grep pem.p7b`; do
+      PEMNAME=$(basename "${cert}" .p7b)
+        openssl pkcs7   \
+          -in "${cert}" \
+          -print_certs  \
+          -out {{ dod.ca_pem }}
+      cp --force {{ dod.ca_pem }} "${PEMNAME}"
+    done
+
+
+- name: Convert Intermediate Certificates
+  shell: |
+    cd {{ paths.dl }}
+    for cert in `ls -1 | grep der.p7b`; do
+      BASENAME=$(basename "${cert}" .p7b)
+      openssl pkcs7 \
+         -print_certs \
+        -inform der \
+        -outform pem \
+        -in "${cert}" \
+        -out "${BASENAME}.pem"
+    done
+
+
+- name: Move PEM(crt) Certificate
+  shell: |
+    cd {{ paths.dl }}
+    for cert in `ls -1 | grep pem$`; do
+      name=$(openssl x509 -noout -subject -in $cert |
+               awk -F '(=|= )' '{gsub(/ /, "_", $NF); print $NF}')
+      cp --force "${cert}" "{{ paths.crt }}/${name}.crt"
+    done
+
+
+...

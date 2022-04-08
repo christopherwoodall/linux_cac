@@ -1,0 +1,35 @@
+---
+
+# - name: Check currently installed Certs
+#   shell: |
+#     certutil -d sql:$HOME/.pki/nssdb/ -L
+#     certutil -d sql:$HOME/.pki/nssdb/ -L -h all
+
+
+- name: Import certificates
+  shell: |
+    cd {{ paths.crt }}
+    for cert in *.crt; do
+      certutil \
+        -A \
+        -f $HOME/.pki/password.txt \
+        -d sql:$HOME/.pki/nssdb \
+        -t CT,C,C \
+        -n "${cert}" \
+        -i "${cert}";
+    done
+  failed_when: false
+
+
+# - name: Update trust attributes to CT,C,C for all the certs
+#   shell: |
+#     for cert in `certutil -L -d sql:$HOME/.pki/nssdb -h all | grep Government | sed 's/\(Government\).*/\1/g'`; do
+#       certutil \
+#         -M \
+#         -n "$cert" \
+#         -d sql:$HOME/.pki/nssdb \
+#         -t CT,C,C
+#     done
+
+
+...

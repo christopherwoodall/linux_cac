@@ -1,0 +1,14 @@
+#!/usr/bin/env -S ansible-playbook -K
+---
+
+- name: Install Linux CAC Modules
+  hosts:        localhost
+  become:       false
+  connection:   local
+  gather_facts: true
+
+  roles:
+    - { role: install-dod-cac }
+
+
+...

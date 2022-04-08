@@ -2,6 +2,6 @@ This is a fork of Jeremy Jackson's [linux-cac](https://github.com/jdjaxon/linux_
 
 To get started, run the following commands:
 ```
-chmod +x setup_cac.yml
-./setup_cac.yml
+chmod +x setup.yml
+./setup.yml
 ```
